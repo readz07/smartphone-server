@@ -27,11 +27,27 @@ async function run() {
       res.send(products)
     })
 
+    //show single product on front end
     app.get('/products/:Id', async(req,res)=>{
       const id = req.params.Id
       const query = {_id:ObjectId(id)}
       const product = await productsCollection.findOne(query);
       res.send(product)
+    })
+
+    //insert data POST method
+    app.post('/products', async(req, res)=>{
+      const newProduct = req.body;
+      const result = await productsCollection.insertOne(newProduct)
+      res.send(result)
+    })
+
+    //Delete products
+    app.delete('/products/:id', async(req,res)=>{
+      const id = req.params.id
+      const query = {_id:ObjectId(id)}
+      const result = await productsCollection.deleteOne(query)
+      res.send(result)
     })
   } finally {
     
