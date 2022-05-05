@@ -12,6 +12,21 @@ const port = process.env.port || 5000;
 app.use(cors())
 app.use(express.json())
 
+function verifyJWT(req, res, next){
+  const authHeaders = req.headers.authorization;
+  if(!authHeaders){
+    return res.status(401).send({message:"Unauthorised Access"});
+  }
+  const token = authHeaders.split(' ')[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
+    if(err){
+      return res.status(403).send({message :"Forbidden Access"})
+    }
+    
+    req.decoded = decoded
+    next()
+  })
+}
 
 //database conncetion
 const uri = `mongodb+srv://${process.env.DB_PRODUCTS}:${process.env.DB_SECURE}@cluster0.30h5q.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -21,12 +36,12 @@ async function run() {
     await client.connect();
     const productsCollection = client.db("smartphoneInventory").collection("products");
     
-    // app.get('/products', async(req, res)=>{
-    //   const query = {};
-    //   const cursor = productsCollection.find(query)
-    //   const products = await cursor.toArray()
-    //   res.send(products)
-    // })
+    app.get('/products', async(req, res)=>{
+      const query = {};
+      const cursor = productsCollection.find(query)
+      const products = await cursor.toArray()
+      res.send(products)
+    })
 
     //show single product on front end
     app.get('/products/:Id', async(req,res)=>{
@@ -45,14 +60,18 @@ async function run() {
       res.send(accessToken)
     })
 
-    // show products based on email id
-    app.get('/products' , async(req, res)=>{
+    //show products based on email id and jwt
+    app.get('/productslist' , verifyJWT, async(req, res)=>{
+      const decodedEmail = req.decoded.email;
       const email = req.query.email;
-      
-      const query ={email:email};
-      const cursor = productsCollection.find(query);
-      const results = await cursor.toArray();
-      res.send(results)
+     if(email === decodedEmail){
+       const query ={email:email};
+       const cursor = productsCollection.find(query);
+       const results = await cursor.toArray();
+       res.send(results)
+     } else{
+       return res.status(403).send({message:'Forbidden Access'})
+     }
     })
 
     //insert data POST method
