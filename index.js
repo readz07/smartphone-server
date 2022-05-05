@@ -2,6 +2,7 @@
 const express = require('express')
 const app = express()
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const res = require('express/lib/response');
 require('dotenv').config()
@@ -33,6 +34,15 @@ async function run() {
       const query = {_id:ObjectId(id)}
       const product = await productsCollection.findOne(query);
       res.send(product)
+    })
+
+    // JWT token for sign in
+    app.post('/signin', async(req, res)=>{
+      const user = req.body;
+      const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET,{
+        expiresIn: "1d"
+      })
+      res.send(accessToken)
     })
 
     // show products based on email id
