@@ -20,12 +20,12 @@ async function run() {
     await client.connect();
     const productsCollection = client.db("smartphoneInventory").collection("products");
     
-    app.get('/products', async(req, res)=>{
-      const query = {};
-      const cursor = productsCollection.find(query)
-      const products = await cursor.toArray()
-      res.send(products)
-    })
+    // app.get('/products', async(req, res)=>{
+    //   const query = {};
+    //   const cursor = productsCollection.find(query)
+    //   const products = await cursor.toArray()
+    //   res.send(products)
+    // })
 
     //show single product on front end
     app.get('/products/:Id', async(req,res)=>{
@@ -35,12 +35,35 @@ async function run() {
       res.send(product)
     })
 
+    // show products based on email id
+    app.get('/products' , async(req, res)=>{
+      const email = req.query.email;
+      
+      const query ={email:email};
+      const cursor = productsCollection.find(query);
+      const results = await cursor.toArray();
+      res.send(results)
+    })
+
     //insert data POST method
     app.post('/products', async(req, res)=>{
       const newProduct = req.body;
       const result = await productsCollection.insertOne(newProduct)
       res.send(result)
     })
+
+    // Update product quantity
+    app.put('/products/:id', async(req,res)=>{
+      const id = req.params.id;
+      const newQuantity = req.body;
+      const filter = {_id: ObjectId(id)};
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: newQuantity
+      };
+      const result = await productsCollection.updateOne(filter,updatedDoc, options);
+      res.send(result)
+    }) 
 
     //Delete products
     app.delete('/products/:id', async(req,res)=>{
