@@ -37,9 +37,17 @@ async function run() {
     const productsCollection = client.db("smartphoneInventory").collection("products");
     
     app.get('/products', async(req, res)=>{
+      
+      const pagenumber = parseInt(req.query.pagenumber)
+      const size = parseInt(req.query.size)
       const query = {};
       const cursor = productsCollection.find(query)
-      const products = await cursor.toArray()
+      let products;
+      if(pagenumber || size){
+        products = await cursor.skip(pagenumber*size).limit(size).toArray()
+      } else{
+        products = await cursor.toArray()
+      }
       res.send(products)
     })
 
@@ -60,6 +68,8 @@ async function run() {
       res.send(accessToken)
     })
 
+    
+
     //show products based on email id and jwt
     app.get('/productslist' , verifyJWT, async(req, res)=>{
       const decodedEmail = req.decoded.email;
@@ -76,6 +86,7 @@ async function run() {
 
     //insert data POST method
     app.post('/products', async(req, res)=>{
+      
       const newProduct = req.body;
       const result = await productsCollection.insertOne(newProduct)
       res.send(result)
@@ -93,6 +104,14 @@ async function run() {
       const result = await productsCollection.updateOne(filter,updatedDoc, options);
       res.send(result)
     }) 
+
+    // Paginaton query
+    app.get('/productscount', async(req, res)=>{
+      const query = {};
+      const cursor =  productsCollection.find(query);
+      const count = await productsCollection.estimatedDocumentCount()
+      res.send({count})
+    });
 
     //Delete products
     app.delete('/products/:id', async(req,res)=>{
